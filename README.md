@@ -1,2 +1,3 @@
 # soyr
-practicas de sistemas operativos y redes
+*avance del codigo que hice en la practica del viernes 19/10
+*Pampa
