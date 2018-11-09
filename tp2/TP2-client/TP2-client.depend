@@ -17,3 +17,8 @@
 	<netdb.h>
 	<unistd.h>
 
+1541770028 source:c:\users\barcala\downloads\soyr-master\tp2\tp2-client\main.c
+	<stdio.h>
+	<string.h>
+	<windows.h>
+
