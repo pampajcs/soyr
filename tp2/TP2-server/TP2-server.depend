@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1541169911 source:c:\users\barcala\desktop\tp2-server\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<windows.h>
+
+1541690744 source:c:\users\pampa\desktop\git\soyr\tp2\tp2-server\main.c
+	<stdio.h>
+	<string.h>
+	<windows.h>
+	<sys/types.h>
+	<netinet/in.h>
+	<sys/socket.h>
+	<arpa/inet.h>
+	<fcntl.h>
+	<netdb.h>
+	<unistd.h>
+
