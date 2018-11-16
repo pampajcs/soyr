@@ -13,6 +13,7 @@ char pedido[20];
 char out_buf[100];    /* 100-byte buffer for output data*/
 char in_buf[100];     /* 100-byte buffer for input data*/
 char cadena[100];
+char lect_com[100];
 unsigned int         server_s;        /*Server socket descriptor*/
 unsigned int         client_s;        /*client socket descriptor*/
 struct sockaddr_in   server_addr;     /*Server1 Internet address*/
@@ -64,8 +65,8 @@ int main(void)
                 printf("errno: %d\n", errno);
             }
             else{
-                printf("%s\n",in_buf);
-                strcpy(out_buf,"recivi");
+                /*printf("%s\n",in_buf);*/
+                /*strcpy(out_buf,"recibi");*/
                 send(client_s, out_buf, sizeof(out_buf), 0);
             }
             /* Output the received message*/
@@ -151,11 +152,12 @@ int main(void)
 }
 
 int comparacion (char *cadena){ /*compara la cadena de caracteres ingresada por el cliente con los estados posibles, depende el estado manda un flag con un valor */
-    char estadoe[]="echo";
+
+    int flag=10;
+   /* char estadoe[]="echo";
     char estadoh[]="hora";
     char estadoc[]="chargen";
     char estadoq[]="quit";
-    int flag;
 
     flag=0;
 
@@ -173,7 +175,7 @@ int comparacion (char *cadena){ /*compara la cadena de caracteres ingresada por 
 
     if (strcmp (estadoq,cadena) == 0){
         flag=4;
-    }
+    }*/
     return flag;
 }
 
@@ -201,8 +203,25 @@ void chargen(void){ /*Entrega la cadena ascii*/
         return;
 }
 void recibir(char *buffer){
-    if(sizeof(buffer)<=1){
-        *cadena=strcat(*cadena,*buffer);
-    }
+    char cad_aux[100];
+    int tam=0;
+    int k=0;
+    int c=0;
+    cad_aux[0]='\n';
+        strcat(cadena,buffer);
+        for(k=0;k<=100;k++){
+            printf("%c-",cadena[k]);
+            if(cadena[k] == '\n'){
+                *lect_com='\0';
+                strcpy(lect_com,cadena);
+                /*printf("lect_com: %s\n",lect_com);*/
+                for(c=0;c<100;c++){
+                    cadena[c]=0;
+                }
+            }
+        }
+        printf("\n");
+        k=0;
+    /*}*/
 }
 
