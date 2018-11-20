@@ -21,18 +21,23 @@ struct sockaddr_in   client_addr;     /*Client1 Internet address*/
 int                  addr_len;        /*Internet address length*/
 int q=0;
 int sin_size;
+int aux=0;
+int salir=0;
+int sum=0;
+long int             i;               /*Loop counter*/
 
+/*-----FUNCIONES----*/
 int comparacion (char *cadena);
 void hora(void);
 void chargen(void);
-void recibir(char *buffer_in);
+void recibir(void);
+void vaciar_cadena(char *cad);
 
 /*//===== Main program ========================================================*/
 int main(void)
 {
     WORD wVersionRequested = MAKEWORD(1,1);      /* Stuff for WSA functions*/
     WSADATA wsaData;                             /* Stuff for WSA functions*/
-    long int             i;               /*Loop counter*/
 
     /* This stuff initializes winsock*/
     WSAStartup(wVersionRequested, &wsaData);
@@ -59,74 +64,78 @@ int main(void)
         case 1:/*escucha*/
             /* Wait to receive a message from client1*/
             /*printf("Escuchando\n");*/
-            i=recv(client_s, in_buf, sizeof(in_buf), 0);
-            recibir(in_buf);
+            recibir();
             if(i == -1){
                 printf("errno: %d\n", errno);
             }
             else{
                 /*printf("%s\n",in_buf);*/
-                /*strcpy(out_buf,"recibi");*/
+                strcpy(out_buf,lect_com);
                 send(client_s, out_buf, sizeof(out_buf), 0);
             }
             /* Output the received message*/
             /*printf("Comando: %s\n", in_buf);*/
             if (c==1){
-                    if(comparacion(in_buf)==0 || comparacion(in_buf)==3){
+                    if(comparacion(lect_com)==0 || comparacion(lect_com)==3){
                         estado=4;
                     }
-                    if (comparacion(in_buf)==1){ /*echo*/
+                    if (comparacion(lect_com)==1){ /*echo*/
                         estado=2;
                         c=0;
                     }
-                    if (comparacion(in_buf)==2){/*hora*/
+                    if (comparacion(lect_com)==2){/*hora*/
                         estado=3;
                         c=0;
                     }
-                    if (comparacion(in_buf)==4){/*quit*/
+                    if (comparacion(lect_com)==4){/*quit*/
                         estado=5;
                         c=0;
                     }
 
             }
-            if(comparacion(in_buf)==0 && c==0){
+            if(comparacion(lect_com)==0 && c==0){
+                vaciar_cadena(out_buf);
                 strcpy(out_buf, "No entiendo su pedido. Envie un comando valido: echo, hora, chargen o quit");
                 send(server_s, out_buf, sizeof(out_buf), 0);
-
             }
-            if (comparacion(in_buf)==1 && c==0){ /*echo*/
+            if (comparacion(lect_com)==1 && c==0){ /*echo*/
                 estado=2;
+                printf("llegó echo\n");
                 strcpy(out_buf, "echo");
                 send(server_s, out_buf, sizeof(out_buf), 0);
             }
-            if (comparacion(in_buf)==2 && c==0){/*hora*/
+            if (comparacion(lect_com)==2 && c==0){/*hora*/
+                printf("llegó hora\n");
                 estado=3;
             }
-            if (comparacion(in_buf)==3 && c==0){/*chargen*/
+            if (comparacion(lect_com)==3 && c==0){/*chargen*/
+                printf("llegó chargen\n");
                 estado=4;
 
             }
-            if (comparacion(in_buf)==4 && c==0){/*quit*/
+            if (comparacion(lect_com)==4 && c==0){/*quit*/
+                printf("llegó quit\n");
                 estado=5;
             }
             break;
 
         case 2:/*echo*/
             while(estado==2){
-                recv(server_s, in_buf, sizeof(in_buf), 0);
-                if (comparacion(in_buf)==1){
+                recibir();
+                if (comparacion(lect_com)==1){
                     estado=1;
                     strcpy(out_buf, "echo");
                     send(server_s, out_buf, sizeof(out_buf), 0);
                 }
                 else{
-                    strcpy(out_buf, in_buf);
+                    strcpy(out_buf, lect_com);
                     send(server_s, out_buf, sizeof(out_buf), 0);
                 }
             }
             break;
 
         case 3:/*hora*/
+            printf("Entro en hora\n");
             hora();
             estado=1;
             break;
@@ -154,7 +163,7 @@ int main(void)
 int comparacion (char *cadena){ /*compara la cadena de caracteres ingresada por el cliente con los estados posibles, depende el estado manda un flag con un valor */
 
     int flag=10;
-   /* char estadoe[]="echo";
+    char estadoe[]="echo";
     char estadoh[]="hora";
     char estadoc[]="chargen";
     char estadoq[]="quit";
@@ -175,7 +184,7 @@ int comparacion (char *cadena){ /*compara la cadena de caracteres ingresada por 
 
     if (strcmp (estadoq,cadena) == 0){
         flag=4;
-    }*/
+    }
     return flag;
 }
 
@@ -187,41 +196,53 @@ void hora(void){ /*Entrega la hora*/
         tm=localtime(&t);
         strftime(horayfecha, 100, "%H:%M:%S %d/%m/%Y", tm);
         strcpy(out_buf, horayfecha);
+        printf("Hora: %s",out_buf);
+        send(server_s, out_buf, sizeof(out_buf), 0);
         send(server_s, out_buf, sizeof(out_buf), 0);
         return;
 }
 
 void chargen(void){ /*Entrega la cadena ascii*/
         int cnt=0;
-        char cadena[100];
+        char cadena2[100];
         for (cnt=32;cnt<=126;cnt++){
-            cadena[cnt-32]=cnt;
+            cadena2[cnt-32]=cnt;
         }
-        cadena[95]='\0';
-        strcpy(out_buf,cadena);
+        cadena2[95]='\0';
+        strcpy(out_buf,cadena2);
         send(server_s, out_buf, sizeof(out_buf), 0);
         return;
 }
-void recibir(char *buffer){
-    char cad_aux[100];
-    int tam=0;
-    int k=0;
-    int c=0;
-    cad_aux[0]='\n';
-        strcat(cadena,buffer);
-        for(k=0;k<=100;k++){
-            printf("%c-",cadena[k]);
-            if(cadena[k] == '\n'){
-                *lect_com='\0';
+void recibir(void){
+    vaciar_cadena(lect_com);
+    i=recv(client_s, in_buf, sizeof(in_buf), 0);
+    /*printf("%d: %X-%X\n",i,in_buf[i-1],in_buf[i-2]);*/
+    salir=0;
+    if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){
+        while(salir==0){
+            i=recv(client_s, in_buf, sizeof(in_buf), 0);
+            sum = sum + i;
+            if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){
+                salir=1;
+                /*for(aux=0;aux<100;aux++){
+                    printf("%X.",cadena[aux]);
+                }*/
+                printf("\n%s\n",cadena);
                 strcpy(lect_com,cadena);
-                /*printf("lect_com: %s\n",lect_com);*/
-                for(c=0;c<100;c++){
-                    cadena[c]=0;
-                }
+                vaciar_cadena(cadena);
+                sum=0;
+            }
+            else{
+                strcat(cadena,in_buf);
+                cadena[sum]='\0';
             }
         }
-        printf("\n");
-        k=0;
-    /*}*/
+    }
+}
+void vaciar_cadena(char *cad){
+    int j=0;
+    for(j=0;j<100;j++){
+        cad[j]=0;
+    }
 }
 
