@@ -58,23 +58,16 @@ int main(void)
     sin_size = sizeof(struct sockaddr_in);
     client_s = accept(server_s, (struct sockaddr *)&client_addr, &sin_size);
     printf("acept: %d",client_s);
+
     estado=1;
     while(q==0 && client_s>=0){
     switch (estado){    /*Maquina de estados de los comandos echo chargen hora quit*/
         case 1:/*escucha*/
-            /* Wait to receive a message from client1*/
-            /*printf("Escuchando\n");*/
             recibir();
+            vaciar_cadena(out_buf);
             if(i == -1){
                 printf("errno: %d\n", errno);
             }
-            else{
-                /*printf("%s\n",in_buf);*/
-                strcpy(out_buf,lect_com);
-                send(client_s, out_buf, sizeof(out_buf), 0);
-            }
-            /* Output the received message*/
-            /*printf("Comando: %s\n", in_buf);*/
             if (c==1){
                     if(comparacion(lect_com)==0 || comparacion(lect_com)==3){
                         estado=4;
@@ -96,25 +89,22 @@ int main(void)
             if(comparacion(lect_com)==0 && c==0){
                 vaciar_cadena(out_buf);
                 strcpy(out_buf, "No entiendo su pedido. Envie un comando valido: echo, hora, chargen o quit");
-                send(server_s, out_buf, sizeof(out_buf), 0);
+                send(client_s, out_buf, sizeof(out_buf), 0);
             }
             if (comparacion(lect_com)==1 && c==0){ /*echo*/
                 estado=2;
-                printf("llegó echo\n");
+                vaciar_cadena(out_buf);
                 strcpy(out_buf, "echo");
-                send(server_s, out_buf, sizeof(out_buf), 0);
+                send(client_s, out_buf, sizeof(out_buf), 0);
             }
             if (comparacion(lect_com)==2 && c==0){/*hora*/
-                printf("llegó hora\n");
                 estado=3;
             }
             if (comparacion(lect_com)==3 && c==0){/*chargen*/
-                printf("llegó chargen\n");
                 estado=4;
 
             }
             if (comparacion(lect_com)==4 && c==0){/*quit*/
-                printf("llegó quit\n");
                 estado=5;
             }
             break;
@@ -129,13 +119,12 @@ int main(void)
                 }
                 else{
                     strcpy(out_buf, lect_com);
-                    send(server_s, out_buf, sizeof(out_buf), 0);
+                    send(client_s, out_buf, sizeof(out_buf), 0);
                 }
             }
             break;
 
         case 3:/*hora*/
-            printf("Entro en hora\n");
             hora();
             estado=1;
             break;
@@ -148,7 +137,7 @@ int main(void)
         case 5:
             q=1;
             strcpy(out_buf, "Servidor cerrando conexion. Que tenga un buen dia");
-            send(server_s, out_buf, sizeof(out_buf), 0);
+            send(client_s, out_buf, sizeof(out_buf), 0);
             break;
 
     }
@@ -196,9 +185,7 @@ void hora(void){ /*Entrega la hora*/
         tm=localtime(&t);
         strftime(horayfecha, 100, "%H:%M:%S %d/%m/%Y", tm);
         strcpy(out_buf, horayfecha);
-        printf("Hora: %s",out_buf);
-        send(server_s, out_buf, sizeof(out_buf), 0);
-        send(server_s, out_buf, sizeof(out_buf), 0);
+        send(client_s, out_buf, sizeof(out_buf), 0);
         return;
 }
 
@@ -209,25 +196,21 @@ void chargen(void){ /*Entrega la cadena ascii*/
             cadena2[cnt-32]=cnt;
         }
         cadena2[95]='\0';
+        vaciar_cadena(out_buf);
         strcpy(out_buf,cadena2);
-        send(server_s, out_buf, sizeof(out_buf), 0);
-        return;
+        send(client_s, out_buf, sizeof(out_buf), 0);
 }
-void recibir(void){
+void recibir(void){                             /*funcion para recibir los comandos entre \r\n de inicio y \r\n de final*/
     vaciar_cadena(lect_com);
     i=recv(client_s, in_buf, sizeof(in_buf), 0);
-    /*printf("%d: %X-%X\n",i,in_buf[i-1],in_buf[i-2]);*/
     salir=0;
-    if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){
+    if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){         /*detecta si llego \r\n de inicio*/
         while(salir==0){
             i=recv(client_s, in_buf, sizeof(in_buf), 0);
             sum = sum + i;
-            if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){
+            if(in_buf[i-1]=='\n' && in_buf[i-2]=='\r'){     /*detecta si llego \r\n de final*/
                 salir=1;
-                /*for(aux=0;aux<100;aux++){
-                    printf("%X.",cadena[aux]);
-                }*/
-                printf("\n%s\n",cadena);
+                printf("\n%s",cadena);
                 strcpy(lect_com,cadena);
                 vaciar_cadena(cadena);
                 sum=0;
